@@ -33,13 +33,19 @@ export const SYSTEM_PROMPT = [
   '4. 다이제스트에 sleep/wake 간격(gapDetected)이 있으면, 휴식 후 돌아온 상황으로 간주하고 가장 최근 활동 클러스터에 의도를 앵커하세요.',
   '5. evidence는 다이제스트에서 도출한 2~4개의 간결한 한국어 근거 문장입니다.',
   '6. actions는 실행 가능한 재개 동작입니다. kind는 "open_tabs", "resume_work", "show_timeline" 중에서만 사용하세요.',
-  '   payload는 빈 객체 {} 로 두어도 됩니다. 실제 URL/경로 검증은 다운스트림에서 수행됩니다.',
+  '   open_tabs payload에는 다이제스트에 있는 URL만 urls 배열로 넣으세요.',
+  '   resume_work payload에는 다이제스트에 있는 workspacePath와 file paths만 넣으세요.',
+  '   show_timeline payload는 빈 객체 {} 로 두세요. 모든 URL/경로는 다운스트림에서 다시 검증됩니다.',
   '',
   '출력 형식: 아래 형태의 엄격한 JSON 객체 하나만 반환하세요. 마크다운 코드펜스나 설명을 덧붙이지 마세요.',
   '{',
   '  "intent": { "summary": "<한국어 추론 문장>", "confidence": <0~1 숫자> },',
   '  "evidence": ["<한국어 근거>", ...],',
-  '  "actions": [{ "label": "<한국어 버튼 라벨>", "kind": "<open_tabs|resume_work|show_timeline>", "payload": {} }]',
+  '  "actions": [',
+  '    { "label": "관련 탭 열기", "kind": "open_tabs", "payload": { "urls": ["<digest URL>"] } },',
+  '    { "label": "작업 이어가기", "kind": "resume_work", "payload": { "workspacePath": "<digest workspacePath>", "paths": ["<digest filePath>"] } },',
+  '    { "label": "타임라인 보기", "kind": "show_timeline", "payload": {} }',
+  '  ]',
   '}',
   '',
   KOREAN_OUTPUT_DIRECTIVE,
@@ -60,9 +66,7 @@ function renderDigest(digest: ContextDigest): string {
   }
   if (digest.gapDetected) {
     const g = digest.gapDetected;
-    lines.push(
-      `gap_detected: ${g.durationMin}분 간격 (from=${g.from}, to=${g.to}) — 휴식 후 복귀`,
-    );
+    lines.push(`gap_detected: ${g.durationMin}분 간격 (from=${g.from}, to=${g.to}) — 휴식 후 복귀`);
   }
 
   lines.push('');
@@ -91,9 +95,7 @@ function renderDigest(digest: ContextDigest): string {
   if (digest.files.length === 0) lines.push('  (없음)');
   for (const f of digest.files) {
     const cursor = f.lastCursorLine !== undefined ? ` (커서 ${f.lastCursorLine}행)` : '';
-    lines.push(
-      `  - ${f.filePath} — 편집 ${f.editCount}회${cursor}, gitDiff=${f.hasGitDiff}`,
-    );
+    lines.push(`  - ${f.filePath} — 편집 ${f.editCount}회${cursor}, gitDiff=${f.hasGitDiff}`);
   }
 
   return lines.join('\n');

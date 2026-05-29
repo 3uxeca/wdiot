@@ -31,6 +31,60 @@ export interface ActionExecutorDeps {
   openTimeline: (range: { from: number; to: number }) => void;
   /** open a URL in the default browser; defaults to Electron `shell`. */
   openExternal?: (url: string) => Promise<void>;
+  /** open a local path in the OS default handler; defaults to Electron `shell`. */
+  openPath?: (path: string) => Promise<string | void>;
+}
+
+/** True when the opaque action payload has no own keys. */
+function isEmptyPayload(action: ResumeAction): boolean {
+  return Object.keys(action.payload).length === 0;
+}
+
+/** Collect unique captured browser/search URLs in most-recent-first order. */
+function capturedUrls(window: ContextWindow): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+
+  for (const activity of [...window.activities].reverse()) {
+    if (activity.type !== 'browser_tab' && activity.type !== 'search') continue;
+    const { url } = activity.payload;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    urls.push(url);
+  }
+
+  return urls;
+}
+
+/** Derive a workspace + edited files from the latest captured IDE activity. */
+function capturedWorkTarget(window: ContextWindow): Record<string, unknown> {
+  const files = window.activities.filter((a) => a.type === 'file_edit');
+  const latest = files[files.length - 1];
+  if (!latest) return {};
+
+  const paths = [...new Set(files.map((activity) => activity.payload.filePath))];
+  return {
+    workspacePath: latest.payload.workspacePath,
+    paths,
+  };
+}
+
+/**
+ * LLMs may return `{}` payloads per the v1 prompt. Fill those from the same
+ * captured ContextWindow so buttons remain genuinely executable while still
+ * passing through the validator's allowlist and cross-checks.
+ */
+function hydrateEmptyPayload(action: ResumeAction, window: ContextWindow): ResumeAction {
+  if (!isEmptyPayload(action)) return action;
+
+  switch (action.kind) {
+    case 'open_tabs':
+      return { ...action, payload: { urls: capturedUrls(window) } };
+    case 'resume_work':
+      return { ...action, payload: capturedWorkTarget(window) };
+    case 'show_timeline':
+      return action;
+  }
 }
 
 /** Open every verified URL of an `open_tabs` action in the default browser. */
@@ -58,24 +112,22 @@ async function runOpenTabs(
  */
 async function runResumeWork(
   validated: ValidatedAction,
-  openExternal: (url: string) => Promise<void>,
+  openPath: (path: string) => Promise<string | void>,
 ): Promise<ActionExecutionResult> {
   const payload = validated.action.payload;
-  const paths = Array.isArray(payload['paths'])
-    ? (payload['paths'] as string[])
-    : [];
+  const paths = Array.isArray(payload['paths']) ? (payload['paths'] as string[]) : [];
   const workspace =
-    typeof payload['workspacePath'] === 'string'
-      ? (payload['workspacePath'] as string)
-      : undefined;
+    typeof payload['workspacePath'] === 'string' ? (payload['workspacePath'] as string) : undefined;
 
   const target = workspace ?? paths[0];
   if (target === undefined) {
     return { ok: false, itemCount: 0 };
   }
 
-  // `openExternal` on a file path opens it with the OS default handler.
-  await openExternal(target);
+  const error = await openPath(target);
+  if (typeof error === 'string' && error.length > 0) {
+    throw new Error(error);
+  }
   return { ok: true, itemCount: 1 };
 }
 
@@ -89,17 +141,16 @@ export async function runAction(
   window: ContextWindow,
   deps: ActionExecutorDeps,
 ): Promise<ActionExecutionResult> {
-  const openExternal =
-    deps.openExternal ?? ((url: string) => shell.openExternal(url));
-  const validated = validateAction(action, window);
+  const openExternal = deps.openExternal ?? ((url: string) => shell.openExternal(url));
+  const openPath = deps.openPath ?? ((path: string) => shell.openPath(path));
+  const hydrated = hydrateEmptyPayload(action, window);
+  const validated = validateAction(hydrated, window);
 
   if (!validated.enabled) {
     return {
       ok: false,
       itemCount: 0,
-      ...(validated.disabledTooltip
-        ? { disabledTooltip: validated.disabledTooltip }
-        : {}),
+      ...(validated.disabledTooltip ? { disabledTooltip: validated.disabledTooltip } : {}),
     };
   }
 
@@ -107,7 +158,7 @@ export async function runAction(
     case 'open_tabs':
       return runOpenTabs(validated, openExternal);
     case 'resume_work':
-      return runResumeWork(validated, openExternal);
+      return runResumeWork(validated, openPath);
     case 'show_timeline':
       deps.openTimeline({
         from: window.activities[0]?.ts ?? window.assembledAt,
