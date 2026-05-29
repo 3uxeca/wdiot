@@ -1,0 +1,35 @@
+{
+  "name": "wdiot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WDIOT (왜켰더라) — macOS personal work-context restoration agent",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @wdiot/shared && npm run build --workspace @wdiot/daemon && npm run build --workspace wdiot-ide-extension",
+    "dev": "npm run dev --workspace @wdiot/daemon",
+    "package": "npm run package --workspace @wdiot/daemon && npm run package --workspace wdiot-ide-extension",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^25.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.8.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

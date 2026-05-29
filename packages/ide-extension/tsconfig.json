@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "types": ["node", "vscode"],
+    "rootDir": "./src",
+    "outDir": "./out",
+    "verbatimModuleSyntax": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["out", "node_modules", "src/**/*.test.ts"]
+}

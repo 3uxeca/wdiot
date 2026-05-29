@@ -1,0 +1,13 @@
+node_modules
+dist
+out
+build
+coverage
+*.vsix
+*.log
+.DS_Store
+.vite
+.npm-cache
+.omx
+dist-types
+*.tsbuildinfo

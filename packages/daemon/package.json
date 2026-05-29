@@ -1,0 +1,56 @@
+{
+  "name": "@wdiot/daemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WDIOT menu-bar daemon (Electron main + renderers)",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "build": "tsc -b tsconfig.node.json && electron-vite build",
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "package": "electron-vite build && electron-builder --mac",
+    "typecheck": "tsc -b tsconfig.node.json",
+    "clean": "rm -rf out dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.97.1",
+    "@wdiot/shared": "*",
+    "better-sqlite3": "^12.10.0",
+    "electron-store": "^11.0.2",
+    "openai": "^6.38.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.5.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^4.0.0",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^3.4.0",
+    "vite": "^7.0.0"
+  },
+  "build": {
+    "appId": "co.soslab.wdiot",
+    "productName": "WDIOT",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dir"
+    }
+  }
+}

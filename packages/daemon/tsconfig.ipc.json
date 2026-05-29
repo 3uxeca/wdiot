@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "lib": ["ES2023"],
+    "types": [],
+    "outDir": "./dist-types/ipc",
+    "noEmit": false,
+    "emitDeclarationOnly": true
+  },
+  "references": [{ "path": "../shared" }],
+  "include": ["src/ipc/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "out", "dist", "dist-types"]
+}
