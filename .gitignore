@@ -5,6 +5,7 @@ build
 coverage
 *.vsix
 *.log
+*.bundle
 .DS_Store
 .vite
 .npm-cache
