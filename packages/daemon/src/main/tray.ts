@@ -101,6 +101,7 @@ export function createTray(nextOptions: TrayOptions = {}): Tray {
   }
 
   tray = new Tray(buildTrayIcon());
+  tray.setTitle('W');
   tray.setToolTip('WDIOT — 왜켰더라');
   tray.setContextMenu(buildMenu());
   return tray;

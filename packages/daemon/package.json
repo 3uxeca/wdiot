@@ -10,7 +10,7 @@
     "dev": "npm run rebuild:native && electron-vite dev",
     "start": "electron-vite preview",
     "package": "npm run rebuild:native && electron-vite build && electron-builder --mac",
-    "rebuild:native": "electron-builder install-app-deps",
+    "rebuild:native": "npm_config_runtime=electron npm_config_target=38.8.6 npm_config_disturl=https://electronjs.org/headers npm_config_build_from_source=true npm rebuild better-sqlite3",
     "rebuild:node": "npm rebuild better-sqlite3",
     "typecheck": "tsc -b tsconfig.node.json",
     "clean": "rm -rf out dist"
