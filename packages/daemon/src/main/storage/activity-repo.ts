@@ -80,6 +80,29 @@ export function sliceActivities(
   return rows.map(rowToActivity);
 }
 
+/**
+ * Slice the most recent activities with `ts >= sinceTs`, capped at `limit`.
+ * This powers the timeline UI, where recency matters more than preserving the
+ * full context-window chronological order.
+ */
+export function sliceRecentActivities(
+  db: Db,
+  sinceTs: number,
+  limit: number = HARD_EVENT_CAP,
+): Activity[] {
+  const rows = db
+    .prepare(
+      `SELECT id, type, source, ts, project_id, payload
+       FROM activities
+       WHERE ts >= ?
+       ORDER BY ts DESC
+       LIMIT ?`,
+    )
+    .all(sinceTs, limit) as ActivityRow[];
+
+  return rows.map(rowToActivity);
+}
+
 /** Total number of stored activities (debug / tests). */
 export function countActivities(db: Db): number {
   const row = db.prepare('SELECT COUNT(*) AS n FROM activities').get() as { n: number };

@@ -11,7 +11,7 @@ import { getSettings, resolveModel } from './config/settings.js';
 import { getApiKey } from './config/keychain.js';
 import { createLlmProvider } from './llm/provider.js';
 import { runAction as executeAction } from './actions/executor.js';
-import { sliceActivities, HARD_EVENT_CAP } from './storage/activity-repo.js';
+import { sliceRecentActivities, HARD_EVENT_CAP } from './storage/activity-repo.js';
 import type { Db } from './storage/db.js';
 import type {
   ActionRunResult,
@@ -81,7 +81,7 @@ export function createRuntimeBackend(deps: RuntimeBackendDeps): IpcBackend {
     async queryTimeline(request: TimelineQueryRequest = {}): Promise<TimelineQueryResult> {
       const sinceTs = request.sinceTs ?? Date.now() - DAY_MS;
       return {
-        activities: sliceActivities(deps.db, sinceTs, HARD_EVENT_CAP),
+        activities: sliceRecentActivities(deps.db, sinceTs, HARD_EVENT_CAP),
       };
     },
   };

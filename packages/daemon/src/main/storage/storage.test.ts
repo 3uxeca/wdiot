@@ -5,6 +5,7 @@ import {
   insertActivity,
   insertActivities,
   sliceActivities,
+  sliceRecentActivities,
   countActivities,
   HARD_EVENT_CAP,
 } from './activity-repo.js';
@@ -115,6 +116,24 @@ describe('activity-repo round-trip', () => {
     expect(countActivities(db)).toBe(10);
     expect(sliceActivities(db, 0, 4)).toHaveLength(4);
     expect(HARD_EVENT_CAP).toBe(500);
+  });
+
+  it('slices the latest activities for timeline queries', () => {
+    const make = (id: string, ts: number): Activity => ({
+      id,
+      type: 'app_switch',
+      source: 'app',
+      ts,
+      payload: { appName: 'App-' + id },
+    });
+    insertActivities(db, [
+      make('old', 1000),
+      make('middle', 2000),
+      make('new', 3000),
+    ]);
+
+    const recent = sliceRecentActivities(db, 0, 2);
+    expect(recent.map((a) => a.id)).toEqual(['new', 'middle']);
   });
 });
 
