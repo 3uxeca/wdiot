@@ -7,9 +7,11 @@
   "main": "./out/main/index.js",
   "scripts": {
     "build": "tsc -b tsconfig.node.json && electron-vite build",
-    "dev": "electron-vite dev",
+    "dev": "npm run rebuild:native && electron-vite dev",
     "start": "electron-vite preview",
-    "package": "electron-vite build && electron-builder --mac",
+    "package": "npm run rebuild:native && electron-vite build && electron-builder --mac",
+    "rebuild:native": "electron-builder install-app-deps",
+    "rebuild:node": "npm rebuild better-sqlite3",
     "typecheck": "tsc -b tsconfig.node.json",
     "clean": "rm -rf out dist"
   },
@@ -31,7 +33,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.5.0",
-    "electron": "^38.0.0",
+    "electron": "38.8.6",
     "electron-builder": "^26.8.1",
     "electron-vite": "^4.0.0",
     "jsdom": "^25.0.1",

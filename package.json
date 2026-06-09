@@ -12,6 +12,7 @@
     "build": "npm run build --workspace @wdiot/shared && npm run build --workspace @wdiot/daemon && npm run build --workspace wdiot-ide-extension",
     "dev": "npm run dev --workspace @wdiot/daemon",
     "package": "npm run package --workspace @wdiot/daemon && npm run package --workspace wdiot-ide-extension",
+    "pretest": "npm run rebuild:node --workspace @wdiot/daemon",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
