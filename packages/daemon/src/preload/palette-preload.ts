@@ -6,29 +6,33 @@
  * contract is a single, auditable seam (plan Boundary 1, security-clean).
  */
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import {
-  IPC,
-  type ActionRunResult,
-  type PaletteApi,
-  type PaletteIntentPush,
-  type PaletteInvokeResult,
-  type Unsubscribe,
+import type {
+  ActionRunResult,
+  PaletteApi,
+  PaletteIntentPush,
+  PaletteInvokeResult,
+  Unsubscribe,
 } from '../ipc/contract.js';
+
+// Keep preload self-contained: sandboxed preload cannot require local chunks.
+const PALETTE_INVOKE = 'palette:invoke';
+const PALETTE_INTENT = 'palette:intent';
+const ACTION_RUN = 'action:run';
 
 const api: PaletteApi = {
   appName: 'WDIOT',
   invoke(): Promise<PaletteInvokeResult> {
-    return ipcRenderer.invoke(IPC.PALETTE_INVOKE);
+    return ipcRenderer.invoke(PALETTE_INVOKE);
   },
   onIntent(callback): Unsubscribe {
     const listener = (_event: IpcRendererEvent, push: PaletteIntentPush): void => {
       callback(push);
     };
-    ipcRenderer.on(IPC.PALETTE_INTENT, listener);
-    return () => ipcRenderer.removeListener(IPC.PALETTE_INTENT, listener);
+    ipcRenderer.on(PALETTE_INTENT, listener);
+    return () => ipcRenderer.removeListener(PALETTE_INTENT, listener);
   },
   runAction(action): Promise<ActionRunResult> {
-    return ipcRenderer.invoke(IPC.ACTION_RUN, action);
+    return ipcRenderer.invoke(ACTION_RUN, action);
   },
 };
 

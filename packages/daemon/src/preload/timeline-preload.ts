@@ -5,16 +5,15 @@
  * touches `ipcRenderer` directly — `timeline:query` is wrapped here.
  */
 import { contextBridge, ipcRenderer } from 'electron';
-import {
-  IPC,
-  type TimelineApi,
-  type TimelineQueryResult,
-} from '../ipc/contract.js';
+import type { TimelineApi, TimelineQueryResult } from '../ipc/contract.js';
+
+// Keep preload self-contained: sandboxed preload cannot require local chunks.
+const TIMELINE_QUERY = 'timeline:query';
 
 const api: TimelineApi = {
   appName: 'WDIOT',
   query(request): Promise<TimelineQueryResult> {
-    return ipcRenderer.invoke(IPC.TIMELINE_QUERY, request ?? {});
+    return ipcRenderer.invoke(TIMELINE_QUERY, request ?? {});
   },
 };
 

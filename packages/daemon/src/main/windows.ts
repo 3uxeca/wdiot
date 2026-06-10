@@ -6,10 +6,10 @@
  * Every window is security-hardened: `nodeIntegration: false`,
  * `contextIsolation: true`, `sandbox: true` (plan Boundary 1).
  *
- * NOTE on preload paths: electron-vite emits preload scripts as `.mjs`
- * (`palette-preload.mjs`, `timeline-preload.mjs`) into `out/preload/`. The main
+ * NOTE on preload paths: Electron loads preload scripts as CommonJS, so
+ * electron-vite emits them as `.cjs` into `out/preload/`. The main
  * bundle lives in `out/main/`, so the preload is resolved relative to this
- * file's runtime directory as `../preload/<name>.mjs`.
+ * file's runtime directory as `../preload/<name>.cjs`.
  */
 import { BrowserWindow, screen } from 'electron';
 import { fileURLToPath } from 'node:url';
@@ -18,9 +18,9 @@ import { dirname, join } from 'node:path';
 /** Absolute path to the directory holding the running main bundle. */
 const mainDir = dirname(fileURLToPath(import.meta.url));
 
-/** Resolve a preload script emitted by electron-vite (`.mjs` output). */
+/** Resolve a preload script emitted by electron-vite (`.cjs` output). */
 function preloadPath(name: 'palette-preload' | 'timeline-preload'): string {
-  return join(mainDir, '..', 'preload', `${name}.mjs`);
+  return join(mainDir, '..', 'preload', `${name}.cjs`);
 }
 
 /**
@@ -45,11 +45,37 @@ function loadRenderer(
   name: 'palette' | 'timeline',
 ): void {
   const entry = rendererEntry(name);
+  attachRendererDiagnostics(window, name, entry.url ?? entry.file ?? 'unknown');
   if (entry.url) {
     void window.loadURL(entry.url);
   } else if (entry.file) {
     void window.loadFile(entry.file);
   }
+}
+
+/** Mirror renderer failures into the dev terminal instead of showing a blank window. */
+function attachRendererDiagnostics(
+  window: BrowserWindow,
+  name: 'palette' | 'timeline',
+  entry: string,
+): void {
+  window.webContents.on(
+    'did-fail-load',
+    (_event, errorCode, errorDescription, validatedURL) => {
+      console.error(
+        `[wdiot] ${name} renderer failed to load ${validatedURL || entry}: ${errorCode} ${errorDescription}`,
+      );
+    },
+  );
+
+  window.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`[wdiot] ${name} renderer process gone:`, details);
+  });
+
+  window.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    if (level < 2) return;
+    console.error(`[wdiot] ${name} renderer: ${message} (${sourceId}:${line})`);
+  });
 }
 
 // --- palette window --------------------------------------------------------
@@ -102,8 +128,9 @@ export function openPaletteWindow(): BrowserWindow {
 
   loadRenderer(paletteWindow, 'palette');
 
-  // Paint-then-show avoids a white flash before the React tree mounts.
-  paletteWindow.once('ready-to-show', () => {
+  // Wait for the HTML to finish loading so renderer failures do not look like
+  // an empty palette.
+  paletteWindow.webContents.once('did-finish-load', () => {
     paletteWindow?.show();
     paletteWindow?.focus();
   });
@@ -170,7 +197,7 @@ export function openTimelineWindow(): BrowserWindow {
 
   loadRenderer(timelineWindow, 'timeline');
 
-  timelineWindow.once('ready-to-show', () => {
+  timelineWindow.webContents.once('did-finish-load', () => {
     timelineWindow?.show();
     timelineWindow?.focus();
   });

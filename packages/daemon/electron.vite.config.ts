@@ -29,6 +29,10 @@ export default defineConfig({
           'palette-preload': resolve(__dirname, 'src/preload/palette-preload.ts'),
           'timeline-preload': resolve(__dirname, 'src/preload/timeline-preload.ts'),
         },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs',
+        },
       },
     },
   },
